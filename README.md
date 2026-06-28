@@ -39,6 +39,34 @@ This project is based on:
 - `/Users/edward/code/project-templates/PROJECT_FOUNDATION_PLAYBOOK.md`
 - `/Users/edward/incorporation`
 
+## App Scaffold
+
+The repository now includes the first implementation pass:
+
+- `apps/web`: Next.js App Router scaffold with public pages, auth placeholders, dashboard routes, and admin placeholders.
+- `packages/shared`: Shared site metadata and navigation config.
+- `convex`: Reserved backend directory for the upcoming Convex schema and functions.
+- Root workspace files for `pnpm`, Turbo, and TypeScript.
+
 ## Current Status
 
-Planning phase. No app scaffold has been created yet.
+Phase 1 scaffold is in progress:
+
+- Public marketing pages are implemented.
+- Dashboard and admin shells are implemented.
+- Auth, Convex data, rule engine logic, and document generation are still pending.
+
+## Local Setup
+
+1. Install dependencies with `pnpm install`.
+2. Run `npx convex dev --once` once to create the local Convex deployment config if `.env.local` does not exist yet.
+3. Start both services with `pnpm dev`.
+4. Open the Next.js app from the local URL shown in the terminal.
+
+## Email Testing
+
+For the current Resend sandbox-style setup, FounderFile defaults to:
+
+- `RESEND_FROM_EMAIL=FounderFile <onboarding@resend.dev>`
+
+That lets password reset emails use Resend's testing sender before a custom domain is configured.
