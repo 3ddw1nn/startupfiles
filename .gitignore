@@ -8,3 +8,5 @@ coverage
 pnpm-lock.yaml
 .DS_Store
 *.tsbuildinfo
+.agents/
+.claude/
