@@ -1,7 +1,19 @@
+import { businessTypeConfigs } from "./dashboard";
+
 export type NavItem = {
   href: string;
   label: string;
   description?: string;
+  disabled?: boolean;
+  badge?: string;
+};
+
+export type NavSection = {
+  id: string;
+  label: string;
+  disabled?: boolean;
+  badge?: string;
+  items: NavItem[];
 };
 
 export const publicNavItems: NavItem[] = [
@@ -12,18 +24,31 @@ export const publicNavItems: NavItem[] = [
   { href: "/contact", label: "Contact" }
 ];
 
-export const dashboardNavItems: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", description: "See your current phase and next step." },
-  { href: "/dashboard/roadmap", label: "Setup Roadmap", description: "Track required tasks by phase." },
-  { href: "/dashboard/phase-0", label: "Phase 0: Sole Proprietor", description: "Start lean under your legal name." },
-  { href: "/dashboard/phase-1", label: "Phase 1: LLC Formation", description: "Prepare for Whale Tales Labs LLC." },
-  { href: "/dashboard/documents", label: "Documents", description: "Generate and review setup documents." },
-  { href: "/dashboard/walkthroughs", label: "Walkthroughs", description: "Follow official filing guides." },
-  { href: "/dashboard/compliance", label: "Compliance Center", description: "Stay ahead of recurring requirements." },
-  { href: "/dashboard/business", label: "Business Profile", description: "Manage founder and business details." },
-  { href: "/dashboard/products", label: "Products", description: "Track product lines and risk triggers." },
-  { href: "/dashboard/filings", label: "Filing Records", description: "Store confirmations and notes." },
-  { href: "/dashboard/reminders", label: "Reminders", description: "See deadlines and notifications." },
-  { href: "/dashboard/settings", label: "Settings", description: "Control account and workspace settings." },
-  { href: "/dashboard/support", label: "Support", description: "Reach out with product or compliance questions." }
+export const dashboardPrimaryNavItems: NavItem[] = [
+  { href: "/dashboard", label: "Dashboard", description: "Workspace overview and next steps." },
+  { href: "/dashboard/documents", label: "All documents", description: "Every document across your setup tracks." }
 ];
+
+export const dashboardBusinessSections: NavSection[] = businessTypeConfigs.map((business) => ({
+  id: business.slug,
+  label: business.label,
+  disabled: !business.available,
+  badge: business.badge,
+  items: [
+    {
+      href: `/dashboard/${business.slug}`,
+      label: "Overview",
+      description: `Overall progress for the ${business.label.toLowerCase()} setup.`
+    },
+    {
+      href: `/dashboard/${business.slug}/dba-fbn`,
+      label: "DBA / FBN",
+      description: `Trade-name tracking for the ${business.label.toLowerCase()} setup.`
+    },
+    {
+      href: `/dashboard/${business.slug}/documents`,
+      label: "Documents",
+      description: `Documents for the ${business.label.toLowerCase()} setup.`
+    }
+  ]
+}));

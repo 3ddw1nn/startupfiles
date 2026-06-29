@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./dashboard": "./src/dashboard.ts",
     "./domain": "./src/domain.ts",
     "./navigation": "./src/navigation.ts",
     "./site": "./src/site.ts"

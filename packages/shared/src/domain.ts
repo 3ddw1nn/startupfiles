@@ -105,3 +105,5 @@ export type DashboardData = {
   nextStep: RoadmapTaskView | null;
   warnings: string[];
 };
+
+export type CurrentUser = DashboardData["user"];

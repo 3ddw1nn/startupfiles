@@ -1,6 +1,7 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type {
   BusinessPhase,
+  CurrentUser,
   DashboardData,
   OnboardingInput,
   RoadmapTaskView,
@@ -108,6 +109,28 @@ type TaskSeed = Omit<RoadmapTaskView, "id">;
 
 const DEFAULT_WARNING =
   "StartupFiles provides structured guidance and document prep support. Verify filings and get professional review when needed.";
+
+export const currentUser = query({
+  args: {},
+  handler: async (ctx): Promise<CurrentUser | null> => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return null;
+    }
+
+    const user = await ctx.db.get(userId);
+    if (!user) {
+      return null;
+    }
+
+    return {
+      id: userId,
+      email: user.email,
+      name: user.name,
+      role: user.role
+    };
+  }
+});
 
 export const viewer = query({
   args: {},
