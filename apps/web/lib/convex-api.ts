@@ -1,4 +1,4 @@
-import type { DashboardData, OnboardingInput, TaskStatus } from "@founderfile/shared/domain";
+import type { DashboardData, OnboardingInput, TaskStatus } from "@startupfiles/shared/domain";
 import { makeFunctionReference } from "convex/server";
 
 export const convexApi = {

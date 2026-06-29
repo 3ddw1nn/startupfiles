@@ -22,7 +22,7 @@ export function AuthShell({ mode }: { mode: AuthMode }) {
         eyebrow: "Sign Up",
         title: "Start the founder workspace with a real account.",
         subtitle:
-          "Create the account first, then FounderFile will seed your workspace and take you into onboarding.",
+          "Create the account first, then StartupFiles will seed your workspace and take you into onboarding.",
         cta: "Create account",
         altHref: "/sign-in",
         altLabel: "Already have an account?"

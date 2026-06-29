@@ -1,6 +1,6 @@
 # Convex
 
-This directory is reserved for the FounderFile backend:
+This directory is reserved for the StartupFiles backend:
 
 - schema
 - queries

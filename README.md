@@ -1,8 +1,8 @@
-# FounderFile
+# StartupFiles
 
 Guided business setup, document preparation, and compliance tracking for solo founders.
 
-FounderFile is a guided business-formation web app for solo founders who match Edward's near-term situation:
+StartupFiles is a guided business-formation web app for solo founders who match Edward's near-term situation:
 
 - California-based solo founder.
 - Starting as a sole proprietor under their own legal name.
@@ -19,8 +19,8 @@ The first internal use case is Edward setting up Whale Tales Labs:
 Public footer/legal-operator rule:
 
 - During Phase 0, public footer and terms should identify the operator as `Edward Lee`, not Whale Tales Labs.
-- Example Phase 0 footer: `© 2026 Edward Lee. FounderFile.`
-- After `Whale Tales Labs LLC` is formed, public footer/operator language can switch to `FounderFile is a product of Whale Tales Labs LLC.`
+- Example Phase 0 footer: `© 2026 Edward Lee. StartupFiles.`
+- After `Whale Tales Labs LLC` is formed, public footer/operator language can switch to `StartupFiles is a product of Whale Tales Labs LLC.`
 - Do not publicly present Whale Tales Labs as the seller, operator, or company before a DBA/FBN is filed or the LLC is formed.
 
 ## Planning Docs
@@ -65,8 +65,8 @@ Phase 1 scaffold is in progress:
 
 ## Email Testing
 
-For the current Resend sandbox-style setup, FounderFile defaults to:
+For the current Resend sandbox-style setup, StartupFiles defaults to:
 
-- `RESEND_FROM_EMAIL=FounderFile <onboarding@resend.dev>`
+- `RESEND_FROM_EMAIL=StartupFiles <onboarding@resend.dev>`
 
 That lets password reset emails use Resend's testing sender before a custom domain is configured.

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
-import { siteConfig } from "@founderfile/shared/site";
+import { siteConfig } from "@startupfiles/shared/site";
 import { ConvexProviders } from "../components/convex-providers";
 
 export const metadata: Metadata = {

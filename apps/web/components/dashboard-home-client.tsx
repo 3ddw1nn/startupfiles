@@ -1,6 +1,6 @@
 "use client";
 
-import type { DashboardData, OnboardingInput, ProductLineInput, TaskStatus } from "@founderfile/shared/domain";
+import type { DashboardData, OnboardingInput, ProductLineInput, TaskStatus } from "@startupfiles/shared/domain";
 import { useMutation, useQuery } from "convex/react";
 import { useState, useTransition } from "react";
 import { convexApi } from "../lib/convex-api";
@@ -142,7 +142,7 @@ export function DashboardHomeClient() {
 
   return (
     <DashboardLayout
-      title="Your FounderFile workspace is now backed by Convex."
+      title="Your StartupFiles workspace is now backed by Convex."
       description="Sign-up seeds the workspace, onboarding persists real founder and business state, and your roadmap updates from backend rules instead of placeholder copy."
     >
       <section className="gridThree">
@@ -214,7 +214,7 @@ export function DashboardHomeClient() {
             </label>
             <label className="stack">
               <span>Domain</span>
-              <input name="domainName" defaultValue={defaults.businessProfile.domainName} className="card" style={{ padding: "14px 16px" }} placeholder="founderfile.com" />
+              <input name="domainName" defaultValue={defaults.businessProfile.domainName} className="card" style={{ padding: "14px 16px" }} placeholder="startupfiles.com" />
             </label>
             <label className="stack">
               <span>Business license status</span>

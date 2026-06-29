@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
-import { dashboardNavItems } from "@founderfile/shared/navigation";
+import { dashboardNavItems } from "@startupfiles/shared/navigation";
 
 export function DashboardLayout({
   title,
@@ -19,7 +19,7 @@ export function DashboardLayout({
             <div className="stack" style={{ marginBottom: 24 }}>
               <div className="eyebrow">Founder Workspace</div>
               <div>
-                <div style={{ fontWeight: 800 }}>FounderFile</div>
+                <div style={{ fontWeight: 800 }}>StartupFiles</div>
                 <div className="muted" style={{ marginTop: 4 }}>
                   Edward Lee workspace
                 </div>

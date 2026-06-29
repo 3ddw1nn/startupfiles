@@ -5,11 +5,11 @@ export default function FaqPage() {
     <MarketingPage
       eyebrow="FAQ"
       title="The questions this product is built around."
-      description="FounderFile is designed to answer the practical questions founders actually get stuck on: what to do now, what not to do yet, and which official sources matter."
+      description="StartupFiles is designed to answer the practical questions founders actually get stuck on: what to do now, what not to do yet, and which official sources matter."
       sections={[
         {
           title: "Is this legal advice?",
-          body: "No. FounderFile gives structured guidance, source links, preparation documents, and review reminders, but the user remains responsible for verification and filing."
+          body: "No. StartupFiles gives structured guidance, source links, preparation documents, and review reminders, but the user remains responsible for verification and filing."
         },
         {
           title: "Who is it for in V1?",

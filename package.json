@@ -1,11 +1,11 @@
 {
-  "name": "founderfile",
+  "name": "startupfiles",
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@10.13.1",
   "scripts": {
     "dev": "concurrently \"pnpm dev:backend\" \"pnpm dev:web\"",
-    "dev:web": "pnpm --filter @founderfile/web dev",
+    "dev:web": "pnpm --filter @startupfiles/web dev",
     "dev:backend": "convex dev",
     "build": "turbo run build",
     "lint": "turbo run lint",

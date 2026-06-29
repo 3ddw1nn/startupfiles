@@ -15,7 +15,7 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@founderfile/shared/*": ["packages/shared/src/*"]
+      "@startupfiles/shared/*": ["packages/shared/src/*"]
     }
   }
 }

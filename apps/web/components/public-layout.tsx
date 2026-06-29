@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Route } from "next";
-import { publicNavItems } from "@founderfile/shared/navigation";
-import { siteConfig } from "@founderfile/shared/site";
+import { publicNavItems } from "@startupfiles/shared/navigation";
+import { siteConfig } from "@startupfiles/shared/site";
 
 export function PublicLayout({
   children
@@ -24,7 +24,7 @@ export function PublicLayout({
         >
           <div>
             <Link href="/" style={{ fontWeight: 800, letterSpacing: "-0.03em" }}>
-              FounderFile
+              StartupFiles
             </Link>
             <div className="muted" style={{ fontSize: "0.95rem", marginTop: 4 }}>
               Guided setup workspace for California solo founders
@@ -69,7 +69,7 @@ export function PublicLayout({
           <div className="stack" style={{ justifyItems: "end" }}>
             <div className="muted">{siteConfig.footerText}</div>
             <div className="muted" style={{ fontSize: "0.92rem", maxWidth: 440, textAlign: "right" }}>
-              FounderFile provides structured guidance and document preparation support. It is
+              StartupFiles provides structured guidance and document preparation support. It is
               not legal, tax, or accounting advice.
             </div>
           </div>

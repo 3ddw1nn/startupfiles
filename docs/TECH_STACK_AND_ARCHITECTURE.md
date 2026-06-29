@@ -28,7 +28,7 @@ Do not use a separate auth/database system unless there is a strong product reas
 Target structure:
 
 ```text
-founderfile/
+startupfiles/
 ├── apps/
 │   └── web/                 # Next.js app deployed to Vercel
 ├── convex/                  # Convex schema, queries, mutations, actions, crons
@@ -71,9 +71,9 @@ Purpose:
 Footer/legal-operator implementation:
 
 - Phase 0 footer text should identify `Edward Lee` as the operator.
-- Default Phase 0 footer copy: `© 2026 Edward Lee. FounderFile.`
+- Default Phase 0 footer copy: `© 2026 Edward Lee. StartupFiles.`
 - Terms and privacy pages should use the same Phase 0 operator.
-- After `Whale Tales Labs LLC` is formed, this can be changed to `FounderFile is a product of Whale Tales Labs LLC.`
+- After `Whale Tales Labs LLC` is formed, this can be changed to `StartupFiles is a product of Whale Tales Labs LLC.`
 - Do not ship a public footer that names Whale Tales Labs as the seller/operator during Phase 0 unless a DBA/FBN has been filed first.
 
 ### Logged-In App

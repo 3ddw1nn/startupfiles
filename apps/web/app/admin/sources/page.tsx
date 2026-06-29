@@ -4,7 +4,7 @@ export default function AdminSourcesPage() {
   return (
     <DashboardPage
       title="Official sources should be curated like product infrastructure."
-      description="Each requirement in FounderFile depends on clear official links, review dates, and internal summaries that keep public guidance grounded in actual agencies and filing systems."
+      description="Each requirement in StartupFiles depends on clear official links, review dates, and internal summaries that keep public guidance grounded in actual agencies and filing systems."
       cards={[
         { label: "Source fields", value: "Link + summary", detail: "Agency, jurisdiction, review date, status." },
         { label: "Goal", value: "Trust", detail: "Users should see where guidance comes from." },

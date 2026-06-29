@@ -2,7 +2,7 @@
 
 import { Resend } from "resend";
 
-const DEFAULT_TEST_FROM = "FounderFile <onboarding@resend.dev>";
+const DEFAULT_TEST_FROM = "StartupFiles <onboarding@resend.dev>";
 
 function requireEnv(name: string) {
   const value = process.env[name];

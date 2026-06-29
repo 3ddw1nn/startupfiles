@@ -123,10 +123,10 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         async sendVerificationRequest({ identifier, token, expires }) {
           await sendResendEmail({
             to: identifier,
-            subject: "Reset your FounderFile password",
+            subject: "Reset your StartupFiles password",
             html: [
               "<div style=\"font-family: Arial, sans-serif; line-height: 1.5; color: #22170b;\">",
-              "<h1 style=\"font-size: 20px;\">Reset your FounderFile password</h1>",
+              "<h1 style=\"font-size: 20px;\">Reset your StartupFiles password</h1>",
               "<p>Use this verification code to reset your password:</p>",
               `<p style=\"font-size: 28px; font-weight: 700; letter-spacing: 0.08em;\">${token}</p>`,
               `<p>This code expires at ${expires.toUTCString()}.</p>`,

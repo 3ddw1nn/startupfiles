@@ -5,7 +5,7 @@ import type {
   OnboardingInput,
   RoadmapTaskView,
   TaskStatus
-} from "@founderfile/shared/domain";
+} from "@startupfiles/shared/domain";
 import { mutationGeneric, queryGeneric } from "convex/server";
 import type { GenericId } from "convex/values";
 import { v } from "convex/values";
@@ -107,7 +107,7 @@ type WorkspaceBundle = {
 type TaskSeed = Omit<RoadmapTaskView, "id">;
 
 const DEFAULT_WARNING =
-  "FounderFile provides structured guidance and document prep support. Verify filings and get professional review when needed.";
+  "StartupFiles provides structured guidance and document prep support. Verify filings and get professional review when needed.";
 
 export const viewer = query({
   args: {},
@@ -292,7 +292,7 @@ function buildWarnings(input: OnboardingInput, phase: BusinessPhase) {
 
   if (phase !== "llc_formed") {
     warnings.push(
-      "FounderFile should stay publicly operated by Edward Lee until a DBA/FBN is filed or Whale Tales Labs LLC exists."
+      "StartupFiles should stay publicly operated by Edward Lee until a DBA/FBN is filed or Whale Tales Labs LLC exists."
     );
   }
 
@@ -350,7 +350,7 @@ function buildTaskSeeds(input: OnboardingInput, phase: BusinessPhase): TaskSeed[
     {
       taskKey: "stripe-setup",
       title: "Set up Stripe as a sole proprietor if you are accepting payments",
-      description: "Prepare the operational setup without storing SSNs or onboarding secrets in FounderFile.",
+      description: "Prepare the operational setup without storing SSNs or onboarding secrets in StartupFiles.",
       phaseKey: "phase_0",
       status: input.founderProfile.acceptsPayments
         ? input.businessProfile.stripeSetupStatus === "complete"

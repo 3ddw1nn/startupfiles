@@ -3,9 +3,9 @@ import { MarketingPage } from "../../components/marketing-page";
 export default function AboutPage() {
   return (
     <MarketingPage
-      eyebrow="About FounderFile"
+      eyebrow="About StartupFiles"
       title="A practical setup workspace, not a legal-content maze."
-      description="FounderFile is being built around a real founder path: starting as a California sole proprietor, getting the basics right, and only paying for an LLC once the business has enough gravity to justify it."
+      description="StartupFiles is being built around a real founder path: starting as a California sole proprietor, getting the basics right, and only paying for an LLC once the business has enough gravity to justify it."
       sections={[
         {
           title: "Who it serves first",

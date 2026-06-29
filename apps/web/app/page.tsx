@@ -35,7 +35,7 @@ export default function HomePage() {
                 Build the business before it turns into a mess.
               </h1>
               <p className="muted" style={{ fontSize: "1.1rem", maxWidth: 650, margin: 0 }}>
-                FounderFile gives solo founders a practical setup console for Phase 0 sole
+                StartupFiles gives solo founders a practical setup console for Phase 0 sole
                 proprietor work, then shows exactly when Phase 1 LLC formation becomes the smart
                 move.
               </p>
@@ -83,7 +83,7 @@ export default function HomePage() {
             </div>
             <div className="stack">
               <p className="muted" style={{ margin: 0 }}>
-                The initial FounderFile path follows Edward’s setup: Irvine business license,
+                The initial StartupFiles path follows Edward’s setup: Irvine business license,
                 Stripe as a sole proprietor if needed, no DBA/FBN unless using a separate public
                 name, and no public use of Whale Tales Labs as the seller/operator before it
                 legally exists.

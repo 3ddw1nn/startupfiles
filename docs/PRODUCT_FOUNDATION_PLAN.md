@@ -2,7 +2,7 @@
 
 ## Product Defaults
 
-FounderFile is a guided compliance and document-preparation web app. It should feel like a practical setup console, not a generic legal blog or marketing site.
+StartupFiles is a guided compliance and document-preparation web app. It should feel like a practical setup console, not a generic legal blog or marketing site.
 
 The product should serve:
 
@@ -72,12 +72,12 @@ Public positioning:
 
 Public footer/legal-operator policy:
 
-- Product/brand name: FounderFile.
+- Product/brand name: StartupFiles.
 - Phase 0 legal operator: Edward Lee.
-- Phase 0 footer example: `© 2026 Edward Lee. FounderFile.`
+- Phase 0 footer example: `© 2026 Edward Lee. StartupFiles.`
 - Phase 0 terms/privacy should identify Edward Lee as the operator.
 - Future Phase 1 legal operator after formation: Whale Tales Labs LLC.
-- Future Phase 1 footer example: `FounderFile is a product of Whale Tales Labs LLC.`
+- Future Phase 1 footer example: `StartupFiles is a product of Whale Tales Labs LLC.`
 - Do not use Whale Tales Labs publicly as the seller/operator/company during Phase 0 unless a DBA/FBN is filed first.
 
 ## Logged-In App Defaults

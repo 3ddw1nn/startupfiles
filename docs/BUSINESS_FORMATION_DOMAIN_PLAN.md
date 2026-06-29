@@ -45,12 +45,12 @@ Edward-specific defaults:
 - DBA/FBN: not recommended unless operating under a name different from Edward's personal legal name.
 - Whale Tales Labs: do not use publicly as the seller/operator unless DBA/FBN is filed first or the LLC is formed.
 
-FounderFile public footer during Phase 0:
+StartupFiles public footer during Phase 0:
 
-- Use `© 2026 Edward Lee. FounderFile.`
+- Use `© 2026 Edward Lee. StartupFiles.`
 - Terms and privacy should identify Edward Lee as the operator.
-- Do not use `FounderFile by Whale Tales Labs` during Phase 0.
-- Do not use `FounderFile is a product of Whale Tales Labs LLC` until the LLC exists.
+- Do not use `StartupFiles by Whale Tales Labs` during Phase 0.
+- Do not use `StartupFiles is a product of Whale Tales Labs LLC` until the LLC exists.
 
 Phase 0 tasks:
 
@@ -186,7 +186,7 @@ Global disclaimer:
 Specific warnings:
 
 - Do not use a business name publicly during sole proprietor phase unless DBA/FBN rules are satisfied.
-- During Phase 0, FounderFile's footer/legal operator should be Edward Lee, not Whale Tales Labs.
+- During Phase 0, StartupFiles' footer/legal operator should be Edward Lee, not Whale Tales Labs.
 - Buying a domain is not business formation.
 - Buying a domain is not DBA/FBN registration.
 - Buying a domain is not trademark clearance.
