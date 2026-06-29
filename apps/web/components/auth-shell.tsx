@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState, useTransition } from "react";
+import { ui } from "./ui-classes";
 
 type AuthMode = "sign-in" | "sign-up" | "reset";
 
@@ -48,6 +49,12 @@ function normalizeAuthError(error: unknown, mode: AuthMode) {
 
   return rawMessage;
 }
+
+const inputClass =
+  "rounded-2xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--panel-strong)_78%,transparent)] px-4 py-[14px]";
+
+const noteCardClass =
+  "rounded-2xl border bg-[color-mix(in_srgb,var(--panel-strong)_78%,transparent)] p-6";
 
 export function AuthShell({ mode }: { mode: AuthMode }) {
   const { signIn } = useAuthActions();
@@ -151,100 +158,87 @@ export function AuthShell({ mode }: { mode: AuthMode }) {
   };
 
   return (
-    <div className="shell">
-      <section className="surface pageSection" style={{ maxWidth: 720, margin: "0 auto" }}>
+    <div className="mx-auto w-[min(var(--content-width),calc(100vw-32px))]">
+      <section className={`${ui.surface} mx-auto max-w-[720px] p-6`}>
         {isAuthenticated ? (
-          <div className="stack">
-            <div className="eyebrow">Authenticated</div>
-            <h1 className="headline" style={{ margin: 0, fontSize: "clamp(2.1rem, 7vw, 4rem)" }}>
+          <div className="grid gap-[18px]">
+            <div className={ui.eyebrow}>Authenticated</div>
+            <h1 className="m-0 font-sans text-[clamp(2.1rem,7vw,4rem)] leading-[0.98] tracking-[-0.045em]">
               You are already signed in.
             </h1>
-            <p className="muted" style={{ margin: 0 }}>
+            <p className="m-0 text-[var(--muted)]">
               Your Convex session is active, so you can go straight into the founder workspace.
             </p>
-            <div className="buttonRow">
-              <Link href="/dashboard" className="buttonPrimary">
+            <div className="flex flex-wrap gap-3.5">
+              <Link href="/dashboard" className={ui.buttonPrimary}>
                 Open dashboard
               </Link>
             </div>
           </div>
         ) : (
-          <form className="stack" onSubmit={onSubmit}>
-            <div className="eyebrow">{copy.eyebrow}</div>
-            <h1 className="headline" style={{ margin: 0, fontSize: "clamp(2.2rem, 7vw, 4.2rem)" }}>
+          <form className="grid gap-[18px]" onSubmit={onSubmit}>
+            <div className={ui.eyebrow}>{copy.eyebrow}</div>
+            <h1 className="m-0 font-sans text-[clamp(2.2rem,7vw,4.2rem)] leading-[0.98] tracking-[-0.045em]">
               {copy.title}
             </h1>
-            <p className="muted" style={{ margin: 0 }}>{copy.subtitle}</p>
+            <p className="m-0 text-[var(--muted)]">{copy.subtitle}</p>
 
             {isLoading ? (
-              <div
-                className="card"
-                style={{ borderColor: "rgba(196, 101, 53, 0.18)", color: "#7f5632" }}
-              >
+              <div className={`${noteCardClass} border-[rgba(196,101,53,0.18)] text-[#7f5632]`}>
                 Checking your session with Convex Auth. The sign-in form stays available while
                 this loads.
               </div>
             ) : null}
 
             {mode === "sign-up" ? (
-              <label className="stack">
+              <label className="grid gap-[18px]">
                 <span>Name</span>
-                <input
-                  name="name"
-                  required
-                  className="card"
-                  style={{ padding: "14px 16px" }}
-                  placeholder="Edward Lee"
-                />
+                <input name="name" required className={inputClass} placeholder="Edward Lee" />
               </label>
             ) : null}
 
-            <label className="stack">
+            <label className="grid gap-[18px]">
               <span>Email</span>
               <input
                 name="email"
                 type="email"
                 required
-                className="card"
-                style={{ padding: "14px 16px" }}
+                className={inputClass}
                 placeholder="founder@example.com"
               />
             </label>
 
             {mode !== "reset" ? (
-              <label className="stack">
+              <label className="grid gap-[18px]">
                 <span>Password</span>
                 <input
                   name="password"
                   type="password"
                   required
                   minLength={8}
-                  className="card"
-                  style={{ padding: "14px 16px" }}
+                  className={inputClass}
                   placeholder="At least 8 characters"
                 />
               </label>
             ) : null}
 
             {mode === "reset" ? (
-              <div className="gridTwo">
-                <label className="stack">
+              <div className="grid gap-[22px] md:grid-cols-2">
+                <label className="grid gap-[18px]">
                   <span>Verification code</span>
                   <input
                     name="code"
-                    className="card"
-                    style={{ padding: "14px 16px" }}
+                    className={inputClass}
                     placeholder="Only after you receive one"
                   />
                 </label>
-                <label className="stack">
+                <label className="grid gap-[18px]">
                   <span>New password</span>
                   <input
                     name="newPassword"
                     type="password"
                     minLength={8}
-                    className="card"
-                    style={{ padding: "14px 16px" }}
+                    className={inputClass}
                     placeholder="Use with the code"
                   />
                 </label>
@@ -252,27 +246,27 @@ export function AuthShell({ mode }: { mode: AuthMode }) {
             ) : null}
 
             {error ? (
-              <div className="card" style={{ borderColor: "rgba(143, 54, 23, 0.3)", color: "#8f3617" }}>
+              <div className={`${noteCardClass} border-[rgba(143,54,23,0.3)] text-[#8f3617]`}>
                 {error}
               </div>
             ) : null}
             {notice ? (
-              <div className="card" style={{ borderColor: "rgba(47, 107, 79, 0.25)", color: "#2f6b4f" }}>
+              <div className={`${noteCardClass} border-[rgba(47,107,79,0.25)] text-[#2f6b4f]`}>
                 {notice}
               </div>
             ) : null}
 
-            <div className="buttonRow">
-              <button type="submit" className="buttonPrimary" disabled={isPending}>
+            <div className="flex flex-wrap gap-3.5">
+              <button type="submit" className={ui.buttonPrimary} disabled={isPending}>
                 {isPending ? "Working..." : copy.cta}
               </button>
-              <Link href={copy.altHref as Route} className="buttonSecondary">
+              <Link href={copy.altHref as Route} className={ui.buttonSecondary}>
                 {copy.altLabel}
               </Link>
             </div>
 
             {mode === "sign-in" ? (
-              <Link href={"/forgot-password" as Route} className="muted">
+              <Link href={"/forgot-password" as Route} className="text-[var(--muted)]">
                 Forgot password?
               </Link>
             ) : null}

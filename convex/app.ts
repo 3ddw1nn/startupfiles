@@ -265,6 +265,15 @@ export const resetProgress = mutation({
       });
     }
 
+    const setupSessions = await ctx.db
+      .query("setupSessions")
+      .withIndex("by_workspace", (q: any) => q.eq("workspaceId", data.workspace._id))
+      .collect();
+
+    for (const session of setupSessions) {
+      await ctx.db.delete(session._id);
+    }
+
     return true;
   }
 });

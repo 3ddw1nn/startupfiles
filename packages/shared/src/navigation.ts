@@ -29,12 +29,34 @@ export const dashboardPrimaryNavItems: NavItem[] = [
   { href: "/dashboard/documents", label: "All documents", description: "Every document across your setup tracks." }
 ];
 
+export const dashboardFactsNavSection: NavSection = {
+  id: "facts",
+  label: "Facts",
+  items: [
+    {
+      href: "/dashboard/facts/comparison",
+      label: "Comparison",
+      description: "Side-by-side view of each business path."
+    },
+    {
+      href: "/dashboard/facts/budgeting",
+      label: "Budgeting",
+      description: "Transparent setup costs, filing fees, and operating spend."
+    }
+  ]
+};
+
 export const dashboardBusinessSections: NavSection[] = businessTypeConfigs.map((business) => ({
   id: business.slug,
   label: business.label,
   disabled: !business.available,
   badge: business.badge,
   items: [
+    {
+      href: `/dashboard/${business.slug}/setup`,
+      label: "Setup",
+      description: `Step-by-step setup flow for the ${business.label.toLowerCase()} path.`
+    },
     {
       href: `/dashboard/${business.slug}`,
       label: "Overview",

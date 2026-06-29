@@ -104,6 +104,56 @@ export const getSetupSession = query({
   }
 });
 
+export const getSetupOverview = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return {
+        lastActiveBusinessType: null,
+        summaries: []
+      };
+    }
+
+    const workspace = await ctx.db
+      .query("workspaces")
+      .withIndex("by_owner", (q: any) => q.eq("ownerUserId", userId))
+      .unique();
+    if (!workspace) {
+      return {
+        lastActiveBusinessType: null,
+        summaries: []
+      };
+    }
+
+    const sessions = await ctx.db
+      .query("setupSessions")
+      .withIndex("by_workspace", (q: any) => q.eq("workspaceId", workspace._id))
+      .collect();
+
+    const summaries = sessions
+      .map((session) => {
+        const config = getSetupConfig(session.businessType);
+        const totalSteps = config?.totalSteps ?? session.stepStatuses.length;
+        const completedSteps = session.stepStatuses.filter((status: string) => status === "complete").length;
+        return {
+          businessType: session.businessType,
+          currentStep: session.currentStep,
+          totalSteps,
+          completedSteps,
+          updatedAt: session.updatedAt,
+          isCompleted: session.isCompleted
+        };
+      })
+      .sort((a, b) => b.updatedAt - a.updatedAt);
+
+    return {
+      lastActiveBusinessType: summaries[0]?.businessType ?? null,
+      summaries
+    };
+  }
+});
+
 export const startSetup = mutation({
   args: {
     businessType: v.string()

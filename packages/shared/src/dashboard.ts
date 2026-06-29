@@ -63,7 +63,7 @@ export const businessTypeConfigs: BusinessTypeConfig[] = [
     label: "LLC",
     shortLabel: "LLC",
     available: true,
-    totalSteps: 10,
+    totalSteps: 9,
     completedSteps: 0,
     summary: "Great when you want liability separation, a cleaner business identity, and room to grow.",
     nextStep: "Finalize the LLC name, line up your registered agent details, and prepare the formation filing.",

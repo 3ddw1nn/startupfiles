@@ -1,5 +1,6 @@
 import { DashboardLayout } from "../../../components/dashboard-layout";
 import { getCurrentUser } from "../../../lib/current-user";
+import { ui } from "../../../components/ui-classes";
 
 const allDocuments = [
   {
@@ -39,19 +40,32 @@ export default async function DashboardDocumentsPage() {
         actionHref: "/dashboard/llc/documents"
       }}
     >
-      <section className="surface pageSection stack">
+      <section className={`${ui.surface} grid gap-[18px] p-6`}>
         <div>
-          <div className="kicker">Documents library</div>
-          <h2 style={{ margin: "10px 0 0" }}>Every document in one place</h2>
+          <div className={ui.kicker}>Documents library</div>
+          <h2 className="mt-[10px]">Every document in one place</h2>
         </div>
-        <div className="stack">
+        <div className="grid gap-[18px]">
           {allDocuments.map((document) => (
-            <article key={document.title} className="documentCard">
+            <article
+              key={document.title}
+              className={ui.documentCard}
+            >
               <div>
-                <strong>{document.title}</strong>
-                <p>{document.detail}</p>
+                <strong className="block text-[1rem]">{document.title}</strong>
+                <p className="mt-2 text-[var(--muted)]">{document.detail}</p>
               </div>
-              <span className={`statusBadge ${document.status.toLowerCase().replace(/ /g, "_")}`}>{document.status}</span>
+              <span
+                className={`inline-flex min-h-[30px] items-center justify-center rounded-full px-2.5 text-[0.72rem] font-extrabold uppercase tracking-[0.08em] ${
+                  document.status === "Ready"
+                    ? "bg-[color-mix(in_srgb,var(--success)_14%,transparent)] text-[var(--success)]"
+                    : document.status === "In progress"
+                      ? "bg-[color-mix(in_srgb,var(--warning)_16%,transparent)] text-[var(--warning)]"
+                      : "bg-[color-mix(in_srgb,var(--muted)_12%,transparent)] text-[var(--muted)]"
+                }`}
+              >
+                {document.status}
+              </span>
             </article>
           ))}
         </div>

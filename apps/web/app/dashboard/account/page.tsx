@@ -1,5 +1,6 @@
 import { DashboardLayout } from "../../../components/dashboard-layout";
 import { getCurrentUser } from "../../../lib/current-user";
+import { ui } from "../../../components/ui-classes";
 
 export default async function DashboardAccountPage() {
   const currentUser = await getCurrentUser();
@@ -10,28 +11,28 @@ export default async function DashboardAccountPage() {
       description="Manage the identity and workspace details attached to your StartupFiles console."
       initialUser={currentUser}
     >
-      <section className="surface pageSection stack">
+      <section className={`${ui.surface} grid gap-[18px] p-6`}>
         <div>
-          <div className="kicker">Account</div>
-          <h2 style={{ margin: "10px 0 0" }}>Workspace identity</h2>
+          <div className={ui.kicker}>Account</div>
+          <h2 className="mt-[10px]">Workspace identity</h2>
         </div>
-        <div className="stack">
-          <article className="documentCard">
+        <div className="grid gap-[18px]">
+          <article className={ui.infoCard}>
             <div>
-              <strong>Email</strong>
-              <p>{currentUser?.email ?? "Signed-in email unavailable."}</p>
+              <strong className="block text-[1rem]">Email</strong>
+              <p className="mt-2 text-[var(--muted)]">{currentUser?.email ?? "Signed-in email unavailable."}</p>
             </div>
           </article>
-          <article className="documentCard">
+          <article className={ui.infoCard}>
             <div>
-              <strong>Name</strong>
-              <p>{currentUser?.name ?? "Founder workspace"}</p>
+              <strong className="block text-[1rem]">Name</strong>
+              <p className="mt-2 text-[var(--muted)]">{currentUser?.name ?? "Founder workspace"}</p>
             </div>
           </article>
-          <article className="documentCard">
+          <article className={ui.infoCard}>
             <div>
-              <strong>Role</strong>
-              <p>{currentUser?.role ?? "owner"}</p>
+              <strong className="block text-[1rem]">Role</strong>
+              <p className="mt-2 text-[var(--muted)]">{currentUser?.role ?? "owner"}</p>
             </div>
           </article>
         </div>

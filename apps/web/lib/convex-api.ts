@@ -19,6 +19,18 @@ type SetupSessionDoc = {
   updatedAt: number;
 };
 
+type SetupOverview = {
+  lastActiveBusinessType: string | null;
+  summaries: Array<{
+    businessType: string;
+    currentStep: number;
+    totalSteps: number;
+    completedSteps: number;
+    updatedAt: number;
+    isCompleted: boolean;
+  }>;
+};
+
 export const convexApi = {
   currentUser: makeFunctionReference<"query", Record<string, never>, CurrentUser | null>("app:currentUser"),
   viewer: makeFunctionReference<"query", Record<string, never>, DashboardData | null>("app:viewer"),
@@ -49,5 +61,6 @@ export const convexApi = {
       isCompleted?: boolean;
     },
     boolean
-  >("setup:saveSetupStep")
+  >("setup:saveSetupStep"),
+  getSetupOverview: makeFunctionReference<"query", Record<string, never>, SetupOverview>("setup:getSetupOverview")
 };

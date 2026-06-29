@@ -1,4 +1,5 @@
 import { DashboardLayout } from "./dashboard-layout";
+import { ui } from "./ui-classes";
 
 export function DashboardPage({
   title,
@@ -15,23 +16,23 @@ export function DashboardPage({
 }) {
   return (
     <DashboardLayout title={title} description={description}>
-      <section className="gridThree">
+      <section className="grid gap-[22px] lg:grid-cols-3">
         {cards.map((card) => (
-          <article key={card.label} className="surface pageSection metric">
-            <span className="kicker">{card.label}</span>
-            <strong>{card.value}</strong>
-            <div className="muted">{card.detail}</div>
+          <article key={card.label} className={`${ui.surface} grid gap-2 p-6`}>
+            <span className={ui.kicker}>{card.label}</span>
+            <strong className="font-sans text-[2rem] tracking-[-0.04em]">{card.value}</strong>
+            <div className="text-[var(--muted)]">{card.detail}</div>
           </article>
         ))}
       </section>
 
-      <section className="surface pageSection">
-        <div className="kicker">{listTitle}</div>
-        <ul className="list" style={{ marginTop: 18 }}>
+      <section className={`${ui.surface} p-6`}>
+        <div className={ui.kicker}>{listTitle}</div>
+        <ul className="mt-[18px] grid list-none gap-[14px] p-0">
           {listItems.map((item) => (
-            <li key={item.title}>
-              <div style={{ fontWeight: 700 }}>{item.title}</div>
-              <div className="muted" style={{ marginTop: 6 }}>
+            <li key={item.title} className="border-t border-[var(--border)] py-4 first:border-t-0 first:pt-0">
+              <div className="font-bold">{item.title}</div>
+              <div className="mt-1.5 text-[var(--muted)]">
                 {item.detail}
               </div>
             </li>
