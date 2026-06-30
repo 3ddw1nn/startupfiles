@@ -36,7 +36,7 @@ export function BusinessOverviewPage({
   // Compute real progress from setup session, falling back to config defaults
   const totalSteps = setupConfig?.totalSteps ?? business.totalSteps;
   const completedSteps = hasSession
-    ? session!.stepStatuses.filter((s: string) => s === "complete").length
+    ? session!.stepStatuses.filter((s: string) => s === "complete" || s === "not_needed").length
     : business.completedSteps;
   const completionPercent =
     totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
@@ -47,7 +47,8 @@ export function BusinessOverviewPage({
       description={business.summary}
       initialUser={initialUser}
       progress={{
-        currentStep: Math.max(completedSteps, 1),
+        currentStep: hasSession ? Math.max(session!.currentStep, 1) : Math.max(completedSteps, 1),
+        completedSteps,
         totalSteps,
         label: `${completionPercent}% complete`,
         actionHref: business.available ? (`/dashboard/${business.slug}/setup` as Route) : undefined

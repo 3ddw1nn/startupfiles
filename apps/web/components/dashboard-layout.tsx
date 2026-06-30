@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuthActions, useAuthToken } from "@convex-dev/auth/react";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import type { Route } from "next";
 import { usePathname, useRouter } from "next/navigation";
@@ -105,6 +105,7 @@ export function DashboardLayout({
   title,
   description,
   showHeader = true,
+  showTopProgress = true,
   progress,
   initialUser = null,
   children
@@ -112,9 +113,11 @@ export function DashboardLayout({
   title: string;
   description: string;
   showHeader?: boolean;
+  showTopProgress?: boolean;
   progress?: {
     currentStep: number;
     totalSteps: number;
+    completedSteps?: number;
     label?: string;
     actionHref?: string;
     actionLabel?: string;
@@ -127,6 +130,7 @@ export function DashboardLayout({
   const { signOut } = useAuthActions();
   const token = useAuthToken();
   const queriedUser = useQuery(convexApi.currentUser, {});
+  const startSetup = useMutation(convexApi.startSetup);
   const user = queriedUser ?? initialUser;
   const tokenPayload = decodeJwtPayload(token);
   const tokenEmail = readStringClaim(tokenPayload, ["email", "preferred_username"]);
@@ -167,10 +171,11 @@ export function DashboardLayout({
     ? (`/dashboard/${topbarBusinessType}/setup` as Route)
     : (topbarBusiness ? (`/dashboard/${topbarBusiness.slug}/setup` as Route) : resolvedProgress.actionHref);
   const effectiveLabel = hasStartedSetup ? "Resume" : (topbarBusiness ? "Start" : resolvedProgress.actionLabel);
+  const isSetupAction = effectiveHref?.endsWith("/setup") ?? false;
   const progressPercent =
     resolvedProgress.totalSteps > 0
       ? Math.round(
-          ((setupSummary?.completedSteps ?? Math.max(resolvedProgress.currentStep - 1, 0)) /
+          ((resolvedProgress.completedSteps ?? setupSummary?.completedSteps ?? Math.max(resolvedProgress.currentStep - 1, 0)) /
             resolvedProgress.totalSteps) *
             100
         )
@@ -179,6 +184,18 @@ export function DashboardLayout({
   const onSignOut = async () => {
     await signOut();
     router.push("/sign-in");
+  };
+
+  const onTopbarAction = () => {
+    if (!effectiveHref) return;
+
+    router.push(effectiveHref as Route);
+
+    if (!hasStartedSetup && isSetupAction && topbarBusiness) {
+      void startSetup({ businessType: topbarBusiness.slug }).catch((cause) => {
+        console.error("Failed to start setup from the dashboard top bar", cause);
+      });
+    }
   };
 
   return (
@@ -368,37 +385,41 @@ export function DashboardLayout({
               {title || "Founder console"}
             </strong>
           </div>
-          <div className="flex min-w-[min(520px,100%)] items-center gap-3.5">
-            <div className="grid min-w-[152px] gap-0.5">
-              <strong className="text-[0.88rem]">
-                Step {resolvedProgress.currentStep} of {resolvedProgress.totalSteps}
-              </strong>
-              <span className="text-[0.78rem] text-[var(--muted)]">
-                {resolvedProgress.label ?? `${progressPercent}% completed`}
-              </span>
+          {showTopProgress ? (
+            <div className="flex min-w-[min(520px,100%)] items-center gap-3.5">
+              <div className="grid min-w-[152px] gap-0.5">
+                <strong className="text-[0.88rem]">
+                  Step {resolvedProgress.currentStep} of {resolvedProgress.totalSteps}
+                </strong>
+                <span className="text-[0.78rem] text-[var(--muted)]">
+                  {resolvedProgress.label ?? `${progressPercent}% completed`}
+                </span>
+              </div>
+              <div
+                className="h-2 flex-[1_1_180px] overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--muted)_18%,transparent)]"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={resolvedProgress.totalSteps}
+                aria-valuenow={resolvedProgress.currentStep}
+              >
+                <span
+                  className="block h-full rounded-full bg-[linear-gradient(90deg,var(--accent),color-mix(in_srgb,var(--accent)_45%,#22c55e))]"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              {effectiveHref ? (
+                <button type="button" className={ui.buttonPrimary} onClick={onTopbarAction}>
+                  {effectiveLabel ?? "Continue"}
+                </button>
+              ) : (
+                <button type="button" className={ui.buttonSecondary} disabled>
+                  Continue
+                </button>
+              )}
             </div>
-            <div
-              className="h-2 flex-[1_1_180px] overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--muted)_18%,transparent)]"
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={resolvedProgress.totalSteps}
-              aria-valuenow={resolvedProgress.currentStep}
-            >
-              <span
-                className="block h-full rounded-full bg-[linear-gradient(90deg,var(--accent),color-mix(in_srgb,var(--accent)_45%,#22c55e))]"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-            {effectiveHref ? (
-              <Link href={effectiveHref as Route} className={ui.buttonPrimary}>
-                {effectiveLabel ?? "Continue"}
-              </Link>
-            ) : (
-              <button type="button" className={ui.buttonSecondary} disabled>
-                Continue
-              </button>
-            )}
-          </div>
+          ) : (
+            <div />
+          )}
         </header>
 
         <section className="grid max-w-[1240px] gap-[18px] px-[22px]">

@@ -37,11 +37,6 @@ export const soleProprietorSetup: SetupConfig = {
           key: "legal-name",
           label: "Confirm legal name",
           detail: "If you are filing as yourself, we will collect the exact legal name that must match the paperwork."
-        },
-        {
-          key: "review",
-          label: "Review step 1",
-          detail: "Check the summary and confirm this setup step is ready to move forward."
         }
       ]
     },
@@ -52,13 +47,18 @@ export const soleProprietorSetup: SetupConfig = {
       substeps: [
         {
           key: "requirements",
-          label: "Check county rules",
-          detail: "Review whether your public-facing name differs from your legal name and whether county filing is required."
+          label: "Decide if you need a DBA",
+          detail: "Confirm whether your public-facing name differs enough from your legal name to require a DBA or FBN filing."
         },
         {
           key: "prep",
-          label: "Prepare filing inputs",
-          detail: "Gather the business name, county, publication notes, and timing details before submitting."
+          label: "Business name & county",
+          detail: "Capture the DBA name and the county where you will file."
+        },
+        {
+          key: "publication",
+          label: "Publish in a newspaper",
+          detail: "Most California counties require publishing the filing in a local newspaper of general circulation before it is final."
         },
         {
           key: "confirm",
@@ -198,11 +198,6 @@ export const llcSetup: SetupConfig = {
           key: "legal-name",
           label: "Confirm legal name",
           detail: "Capture the legal person details tied to the filing so later documents stay consistent."
-        },
-        {
-          key: "review",
-          label: "Review step 1",
-          detail: "Make sure the filing identity is correct before the flow moves into naming and formation."
         }
       ]
     },
@@ -213,13 +208,18 @@ export const llcSetup: SetupConfig = {
       substeps: [
         {
           key: "requirements",
-          label: "Check naming rules",
+          label: "Decide if you need a DBA",
           detail: "Confirm whether the public brand name differs from the LLC legal name and triggers a DBA or FBN."
         },
         {
           key: "prep",
-          label: "Prepare filing inputs",
-          detail: "Gather county, publication, and branding details before you file."
+          label: "Business name & county",
+          detail: "Capture the DBA name and the county where you will file."
+        },
+        {
+          key: "publication",
+          label: "Publish in a newspaper",
+          detail: "Most California counties require publishing the filing in a local newspaper of general circulation before it is final."
         },
         {
           key: "confirm",

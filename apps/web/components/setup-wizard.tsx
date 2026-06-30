@@ -16,6 +16,11 @@ type SetupSession = {
   legalMiddleName?: string;
   legalLastName?: string;
   legalSuffix?: string;
+  needsDba?: boolean;
+  dbaName?: string;
+  dbaCounty?: string;
+  dbaNewspaperName?: string;
+  dbaPublicationFiled?: boolean;
   isCompleted: boolean;
 } | null;
 
@@ -25,6 +30,14 @@ type StepOneDraft = {
   legalMiddleName: string;
   legalLastName: string;
   legalSuffix: string;
+};
+
+type StepTwoDraft = {
+  needsDba: boolean | null;
+  dbaName: string;
+  dbaCounty: string;
+  dbaNewspaperName: string;
+  dbaPublicationFiled: boolean;
 };
 
 const tw = {
@@ -37,7 +50,7 @@ const tw = {
     "grid items-start gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(280px,360px)]",
   setupRail: "grid gap-[18px] xl:sticky xl:top-[92px]",
   setupRailPanel: `${ui.surface} p-[22px]`,
-  setupWorkbench: `${ui.surface} mt-2 grid gap-6 p-7`,
+  setupWorkbench: `${ui.surface} mt-6 grid gap-6 p-7`,
   setupStage: "grid gap-5",
   setupInfoPanel:
     "rounded-[20px] border border-[var(--border)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--panel)_84%,transparent),color-mix(in_srgb,var(--panel)_70%,transparent))] p-[22px]",
@@ -54,13 +67,12 @@ const tw = {
     "grid items-center gap-4 border-t border-[var(--border)] pt-[18px] md:grid-cols-[auto_minmax(0,1fr)_auto]",
   setupActionMeta: "grid gap-1",
   setupButtonPrimary:
-    "min-h-[52px] rounded-2xl border border-[color-mix(in_srgb,var(--accent)_40%,transparent)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--accent)_86%,white),var(--accent))] px-[22px] font-bold tracking-[-0.01em] text-white shadow-[0_16px_36px_color-mix(in_srgb,var(--accent)_18%,transparent)] disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none",
+    "min-h-[52px] rounded-2xl border border-[color-mix(in_srgb,var(--accent)_40%,transparent)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--accent)_86%,white),var(--accent))] px-[22px] font-bold tracking-[-0.01em] text-white shadow-[0_16px_36px_color-mix(in_srgb,var(--accent)_18%,transparent)] disabled:cursor-not-allowed disabled:opacity-[0.55] disabled:shadow-none",
   setupButtonSecondary:
-    "min-h-[52px] rounded-2xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_80%,transparent)] px-[22px] font-bold tracking-[-0.01em] text-[var(--text)] disabled:cursor-not-allowed disabled:opacity-55",
+    "min-h-[52px] rounded-2xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_80%,transparent)] px-[22px] font-bold tracking-[-0.01em] text-[var(--text)] disabled:cursor-not-allowed disabled:opacity-[0.55]",
   setupPageSpacing: "",
-  setupContentGrid: "grid items-start gap-[18px] xl:grid-cols-[minmax(0,1.18fr)_minmax(280px,0.82fr)]",
+  setupContentGrid: "grid items-start gap-[18px]",
   setupPrimaryPanel: "grid gap-[18px]",
-  setupSupportPanel: "grid gap-[18px]",
   setupRoadmapPreview: "grid gap-2.5",
   setupRoadmapRow: "grid gap-1.5",
   setupMiniStats: "grid gap-3 md:grid-cols-2"
@@ -103,9 +115,9 @@ function getDefaultSubstepIndex(step: SetupStep, session: SetupSession) {
   if (session.isEntityApplication === undefined) return 0;
   if (session.isEntityApplication === false) {
     const hasName = Boolean(session.legalFirstName?.trim() && session.legalLastName?.trim());
-    return hasName ? 2 : 1;
+    return hasName ? step.substeps.length - 1 : 1;
   }
-  return 2;
+  return step.substeps.length - 1;
 }
 
 function getCurrentStepPercent(step: SetupStep, session: SetupSession, substepIndex: number) {
@@ -116,20 +128,50 @@ function getCurrentStepPercent(step: SetupStep, session: SetupSession, substepIn
   return Math.round((substepIndex / total) * 100);
 }
 
+function normalizeStepStatuses(config: SetupConfig, statuses: string[] | undefined, currentStep: number) {
+  const latestInProgressIndex = statuses?.reduce(
+    (latest, status, index) => (status === "in_progress" ? index : latest),
+    -1
+  ) ?? -1;
+  const minimumStep = statuses ? 1 : 0;
+  const effectiveCurrentStep = Math.min(
+    Math.max(currentStep, latestInProgressIndex + 1, minimumStep),
+    config.totalSteps
+  );
+
+  return config.steps.map((step, index) => {
+    const status = statuses?.[index] ?? (step.stepNumber === effectiveCurrentStep ? "in_progress" : "not_started");
+    if (step.stepNumber < effectiveCurrentStep && status !== "not_needed") return "complete";
+    if (step.stepNumber === effectiveCurrentStep && status === "not_started") return "in_progress";
+    return status;
+  });
+}
+
+function getEffectiveCurrentStep(statuses: string[] | undefined, fallbackStep: number) {
+  const latestInProgressIndex = statuses?.reduce(
+    (latest, status, index) => (status === "in_progress" ? index : latest),
+    -1
+  ) ?? -1;
+  const minimumStep = statuses ? 1 : 0;
+  return Math.max(fallbackStep, latestInProgressIndex + 1, minimumStep);
+}
+
 function SetupProgressRail({
   config,
   session,
   currentStep,
+  stepStatuses,
   activeSubstepIndex,
   onNavigate
 }: {
   config: SetupConfig;
   session: SetupSession;
   currentStep: number;
+  stepStatuses: string[];
   activeSubstepIndex: number;
   onNavigate: (stepNumber: number) => void;
 }) {
-  const completedSteps = session?.stepStatuses.filter((status) => status === "complete").length ?? 0;
+  const completedSteps = stepStatuses.filter((status) => status === "complete" || status === "not_needed").length;
   const overallPercent = Math.round((completedSteps / config.totalSteps) * 100);
 
   return (
@@ -144,9 +186,10 @@ function SetupProgressRail({
         </div>
         <div className="mt-[18px] grid gap-2.5">
           {config.steps.map((step) => {
-            const status = session?.stepStatuses[step.stepNumber - 1] ?? "not_started";
+            const status = stepStatuses[step.stepNumber - 1] ?? "not_started";
             const tone = getStatusTone(status);
             const isCurrent = currentStep === step.stepNumber;
+            const isDone = status === "complete" || status === "not_needed";
             const progress = isCurrent
               ? getCurrentStepPercent(step, session, activeSubstepIndex)
               : status === "complete" || status === "not_needed"
@@ -165,17 +208,17 @@ function SetupProgressRail({
                 onClick={() => onNavigate(step.stepNumber)}
               >
                 <span
-                  className={`grid h-12 w-12 place-items-center rounded-full border border-[color-mix(in_srgb,var(--border)_88%,transparent)] text-[0.95rem] font-extrabold ${
-                    tone === "complete"
-                      ? "text-[var(--success)]"
+                  className={`grid h-12 w-12 place-items-center rounded-full border text-[0.95rem] font-extrabold ${
+                    isDone
+                      ? "border-[color-mix(in_srgb,var(--success)_42%,transparent)] bg-[color-mix(in_srgb,var(--success)_16%,transparent)] text-[var(--success)]"
                       : tone === "active"
-                        ? "text-[var(--text)]"
-                        : "text-[var(--muted)]"
+                        ? "border-[color-mix(in_srgb,var(--border)_88%,transparent)] text-[var(--text)]"
+                        : "border-[color-mix(in_srgb,var(--border)_88%,transparent)] text-[var(--muted)]"
                   }`}
                   style={{ ["--progress" as string]: `${progress}%` }}
                   aria-hidden="true"
                 >
-                  {status === "complete" ? "✓" : step.stepNumber}
+                  {isDone ? "✓" : step.stepNumber}
                 </span>
                 <span className="grid gap-1">
                   <span className="flex items-center justify-between gap-2.5 text-[0.8rem] uppercase tracking-[0.12em] text-[var(--muted)]">
@@ -350,12 +393,10 @@ function EntityChoiceCard({
 function StepOneContent({
   substepIndex,
   draft,
-  saving,
   onDraftChange
 }: {
   substepIndex: number;
   draft: StepOneDraft;
-  saving: boolean;
   onDraftChange: (patch: Partial<StepOneDraft>) => void;
 }) {
   if (substepIndex === 0) {
@@ -386,33 +427,12 @@ function StepOneContent({
   }
 
   if (substepIndex === 1) {
-    if (draft.isEntityApplication) {
-      return (
-        <div className={tw.setupStage}>
-          <div>
-            <h2>Entity filing path confirmed</h2>
-            <p className={tw.muted}>
-              Because you are applying as an entity, this step does not need a personal legal-name entry. We will carry that context into the next checkpoint and keep moving.
-            </p>
-          </div>
-          <div className={tw.setupInfoPanel}>
-            <strong>What changes now</strong>
-            <ul className={tw.setupBulletListSimple}>
-              <li className="relative pl-[18px] leading-[1.6] text-[var(--muted)] before:absolute before:left-0 before:top-[0.65rem] before:h-[7px] before:w-[7px] before:rounded-full before:bg-[var(--accent)]">The setup will keep the filing context tied to a business entity.</li>
-              <li className="relative pl-[18px] leading-[1.6] text-[var(--muted)] before:absolute before:left-0 before:top-[0.65rem] before:h-[7px] before:w-[7px] before:rounded-full before:bg-[var(--accent)]">Later naming and document steps can reference the entity path directly.</li>
-              <li className="relative pl-[18px] leading-[1.6] text-[var(--muted)] before:absolute before:left-0 before:top-[0.65rem] before:h-[7px] before:w-[7px] before:rounded-full before:bg-[var(--accent)]">You can still come back and change this before the full setup is complete.</li>
-            </ul>
-          </div>
-        </div>
-      );
-    }
-
     return (
       <div className={tw.setupStage}>
         <div>
           <h2>Confirm your legal name</h2>
           <p className={tw.muted}>
-            Since the setup is tied to you directly, the name here should match the identity used on filings, registrations, and supporting paperwork.
+            Enter the full legal name for the person or signer tied to this setup. We use this for filings and the saved setup session.
           </p>
         </div>
         <div className={tw.setupFormGrid}>
@@ -423,18 +443,16 @@ function StepOneContent({
               value={draft.legalFirstName}
               onChange={(event) => onDraftChange({ legalFirstName: event.target.value })}
               placeholder="John"
-              disabled={saving}
               className="h-[52px] rounded-2xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--bg)_78%,var(--panel))] px-4 text-[var(--text)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_14%,transparent)]"
             />
           </label>
           <label className={tw.setupField}>
-            <span>Middle name</span>
+            <span>Middle name <span className={tw.muted}>(optional)</span></span>
             <input
               type="text"
               value={draft.legalMiddleName}
               onChange={(event) => onDraftChange({ legalMiddleName: event.target.value })}
               placeholder="Michael"
-              disabled={saving}
               className="h-[52px] rounded-2xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--bg)_78%,var(--panel))] px-4 text-[var(--text)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_14%,transparent)]"
             />
           </label>
@@ -445,18 +463,16 @@ function StepOneContent({
               value={draft.legalLastName}
               onChange={(event) => onDraftChange({ legalLastName: event.target.value })}
               placeholder="Doe"
-              disabled={saving}
               className="h-[52px] rounded-2xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--bg)_78%,var(--panel))] px-4 text-[var(--text)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_14%,transparent)]"
             />
           </label>
           <label className={tw.setupField}>
-            <span>Suffix</span>
+            <span>Suffix <span className={tw.muted}>(optional)</span></span>
             <input
               type="text"
               value={draft.legalSuffix}
               onChange={(event) => onDraftChange({ legalSuffix: event.target.value })}
               placeholder="Jr., III"
-              disabled={saving}
               className="h-[52px] rounded-2xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--bg)_78%,var(--panel))] px-4 text-[var(--text)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_14%,transparent)]"
             />
           </label>
@@ -465,31 +481,166 @@ function StepOneContent({
     );
   }
 
-  const fullName = [
-    draft.legalFirstName.trim(),
-    draft.legalMiddleName.trim(),
-    draft.legalLastName.trim()
-  ]
-    .filter(Boolean)
-    .join(" ");
-  const nameWithSuffix = draft.legalSuffix.trim() ? `${fullName}, ${draft.legalSuffix.trim()}` : fullName;
+  return null;
+}
+
+function StepTwoContent({
+  substepIndex,
+  isEntityApplication,
+  draft,
+  onDraftChange
+}: {
+  substepIndex: number;
+  isEntityApplication: boolean | null;
+  draft: StepTwoDraft;
+  onDraftChange: (patch: Partial<StepTwoDraft>) => void;
+}) {
+  if (isEntityApplication === false) {
+    return (
+      <div className={tw.setupStage}>
+        <div>
+          <h2>This step is skipped</h2>
+          <p className={tw.muted}>
+            Because you selected individual, you do not need to complete the DBA / FBN step right now. We will move you straight to the next step.
+          </p>
+        </div>
+        <div className={tw.setupInfoPanel}>
+          <strong>What happens next</strong>
+          <ul className={tw.setupBulletListSimple}>
+            <li className="relative pl-[18px] leading-[1.6] text-[var(--muted)] before:absolute before:left-0 before:top-[0.65rem] before:h-[7px] before:w-[7px] before:rounded-full before:bg-[var(--accent)]">Step 2 is marked not needed for the individual path.</li>
+            <li className="relative pl-[18px] leading-[1.6] text-[var(--muted)] before:absolute before:left-0 before:top-[0.65rem] before:h-[7px] before:w-[7px] before:rounded-full before:bg-[var(--accent)]">Next takes you to the city business license step.</li>
+            <li className="relative pl-[18px] leading-[1.6] text-[var(--muted)] before:absolute before:left-0 before:top-[0.65rem] before:h-[7px] before:w-[7px] before:rounded-full before:bg-[var(--accent)]">Your legal name and applicant choice stay saved in the setup session.</li>
+          </ul>
+        </div>
+      </div>
+    );
+  }
+
+  if (substepIndex === 0) {
+    return (
+      <div className={tw.setupStage}>
+        <div>
+          <h2>Do you need a DBA / FBN filing?</h2>
+          <p className={tw.muted}>
+            If the business will operate under a name different from the legal entity name, you will need to file a DBA (doing business as) or FBN (fictitious business name).
+          </p>
+        </div>
+        <div className={tw.setupChoiceGrid}>
+          <EntityChoiceCard
+            selected={draft.needsDba === true}
+            title="Yes, I need a DBA / FBN"
+            detail="The public-facing business name differs from the legal entity name."
+            onClick={() => onDraftChange({ needsDba: true })}
+          />
+          <EntityChoiceCard
+            selected={draft.needsDba === false}
+            title="No, I will use the legal name"
+            detail="The business will operate publicly under its exact legal name."
+            onClick={() => onDraftChange({ needsDba: false })}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (substepIndex === 1) {
+    return (
+      <div className={tw.setupStage}>
+        <div>
+          <h2>Business name & county</h2>
+          <p className={tw.muted}>
+            Capture the exact DBA name and the county where the filing will be made.
+          </p>
+        </div>
+        <div className={tw.setupFormGrid}>
+          <label className={tw.setupField}>
+            <span>DBA / FBN name</span>
+            <input
+              type="text"
+              value={draft.dbaName}
+              onChange={(event) => onDraftChange({ dbaName: event.target.value })}
+              placeholder="Doe Consulting"
+              className="h-[52px] rounded-2xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--bg)_78%,var(--panel))] px-4 text-[var(--text)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_14%,transparent)]"
+            />
+          </label>
+          <label className={tw.setupField}>
+            <span>Filing county</span>
+            <input
+              type="text"
+              value={draft.dbaCounty}
+              onChange={(event) => onDraftChange({ dbaCounty: event.target.value })}
+              placeholder="Orange County"
+              className="h-[52px] rounded-2xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--bg)_78%,var(--panel))] px-4 text-[var(--text)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_14%,transparent)]"
+            />
+          </label>
+        </div>
+      </div>
+    );
+  }
+
+  if (substepIndex === 2) {
+    return (
+      <div className={tw.setupStage}>
+        <div>
+          <h2>Publish in a newspaper</h2>
+          <p className={tw.muted}>
+            Most California counties require publishing the DBA/FBN in a newspaper of general circulation before the filing is considered final.
+          </p>
+        </div>
+        <div className={tw.setupInfoPanel}>
+          <strong>California publication requirement</strong>
+          <ul className={tw.setupBulletListSimple}>
+            <li className="relative pl-[18px] leading-[1.6] text-[var(--muted)] before:absolute before:left-0 before:top-[0.65rem] before:h-[7px] before:w-[7px] before:rounded-full before:bg-[var(--accent)]">Publish the filing once a week for 4 consecutive weeks in a newspaper of general circulation in the filing county.</li>
+            <li className="relative pl-[18px] leading-[1.6] text-[var(--muted)] before:absolute before:left-0 before:top-[0.65rem] before:h-[7px] before:w-[7px] before:rounded-full before:bg-[var(--accent)]">Publication generally must start within 30 days of filing the DBA/FBN with the county clerk.</li>
+            <li className="relative pl-[18px] leading-[1.6] text-[var(--muted)] before:absolute before:left-0 before:top-[0.65rem] before:h-[7px] before:w-[7px] before:rounded-full before:bg-[var(--accent)]">After the last publication, you must file a Proof of Publication with the county clerk within 30 days — for example, Orange County (including Irvine) requires this before the filing is complete.</li>
+            <li className="relative pl-[18px] leading-[1.6] text-[var(--muted)] before:absolute before:left-0 before:top-[0.65rem] before:h-[7px] before:w-[7px] before:rounded-full before:bg-[var(--accent)]">Requirements and approved newspapers vary by county, so confirm with your county clerk's office.</li>
+          </ul>
+        </div>
+        <div className={tw.setupFormGrid}>
+          <label className={tw.setupField}>
+            <span>Newspaper used <span className={tw.muted}>(optional until scheduled)</span></span>
+            <input
+              type="text"
+              value={draft.dbaNewspaperName}
+              onChange={(event) => onDraftChange({ dbaNewspaperName: event.target.value })}
+              placeholder="Orange County Register"
+              className="h-[52px] rounded-2xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--bg)_78%,var(--panel))] px-4 text-[var(--text)] outline-none focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_14%,transparent)]"
+            />
+          </label>
+          <label className="grid items-center gap-2 self-end">
+            <span className="flex items-center gap-2.5">
+              <input
+                type="checkbox"
+                checked={draft.dbaPublicationFiled}
+                onChange={(event) => onDraftChange({ dbaPublicationFiled: event.target.checked })}
+                className="h-5 w-5 accent-[var(--accent)]"
+              />
+              Proof of publication filed with the county clerk
+            </span>
+          </label>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={tw.setupStage}>
       <div>
-        <h2>Review step 1</h2>
+        <h2>Lock the naming plan</h2>
         <p className={tw.muted}>
-          This checkpoint closes out the applicant identity step. Review it before the setup moves into business naming and filing work.
+          Confirm the DBA / FBN details below so later setup steps use the same name everywhere.
         </p>
       </div>
-      <div className={tw.setupSummaryGrid}>
+      <div className={tw.setupReviewGrid}>
         <article className={`${tw.surfaceInset} ${tw.stack}`}>
-          <span className={tw.kicker}>Applicant type</span>
-          <strong>{draft.isEntityApplication ? "Business entity" : "Individual"}</strong>
+          <span className={tw.kicker}>Naming plan</span>
+          <strong>{draft.dbaName.trim() || "No DBA name entered yet"}</strong>
+          <p className={tw.muted}>{draft.dbaCounty.trim() || "No filing county entered yet"}</p>
         </article>
         <article className={`${tw.surfaceInset} ${tw.stack}`}>
-          <span className={tw.kicker}>Legal name</span>
-          <strong>{draft.isEntityApplication ? "Not required for this checkpoint" : nameWithSuffix || "Missing"}</strong>
+          <span className={tw.kicker}>Publication</span>
+          <strong>{draft.dbaPublicationFiled ? "Proof of publication filed" : "Not yet filed"}</strong>
+          <p className={tw.muted}>{draft.dbaNewspaperName.trim() || "No newspaper recorded yet"}</p>
         </article>
       </div>
     </div>
@@ -594,6 +745,21 @@ function FinalReviewContent({
           <p className={tw.muted}>{nameWithSuffix || "No personal legal name recorded."}</p>
         </article>
         <article className={`${tw.surfaceInset} ${tw.stack}`}>
+          <span className={tw.kicker}>DBA / FBN</span>
+          <strong>
+            {session?.needsDba === false
+              ? "Not needed"
+              : session?.dbaName || "No DBA name recorded"}
+          </strong>
+          <p className={tw.muted}>
+            {session?.needsDba === false
+              ? "Operating under the legal name."
+              : session?.dbaCounty
+                ? `${session.dbaCounty}${session?.dbaPublicationFiled ? " · Proof of publication filed" : " · Publication pending"}`
+                : "Filing details not recorded yet."}
+          </p>
+        </article>
+        <article className={`${tw.surfaceInset} ${tw.stack}`}>
           <span className={tw.kicker}>Step coverage</span>
           <div className="grid gap-2.5">
             {config.steps.map((step) => {
@@ -638,6 +804,7 @@ export function SetupWizard({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [localStep, setLocalStep] = useState<number | null>(null);
+  const [localStepStatuses, setLocalStepStatuses] = useState<string[] | null>(null);
   const [localSubsteps, setLocalSubsteps] = useState<Record<number, number>>({});
   const [stepOneDraft, setStepOneDraft] = useState<StepOneDraft>({
     isEntityApplication: null,
@@ -645,6 +812,13 @@ export function SetupWizard({
     legalMiddleName: "",
     legalLastName: "",
     legalSuffix: ""
+  });
+  const [stepTwoDraft, setStepTwoDraft] = useState<StepTwoDraft>({
+    needsDba: null,
+    dbaName: "",
+    dbaCounty: "",
+    dbaNewspaperName: "",
+    dbaPublicationFiled: false
   });
 
   useEffect(() => {
@@ -664,12 +838,34 @@ export function SetupWizard({
   ]);
 
   useEffect(() => {
+    setStepTwoDraft({
+      needsDba: session?.needsDba ?? null,
+      dbaName: session?.dbaName ?? "",
+      dbaCounty: session?.dbaCounty ?? "",
+      dbaNewspaperName: session?.dbaNewspaperName ?? "",
+      dbaPublicationFiled: session?.dbaPublicationFiled ?? false
+    });
+  }, [
+    session?.needsDba,
+    session?.dbaName,
+    session?.dbaCounty,
+    session?.dbaNewspaperName,
+    session?.dbaPublicationFiled
+  ]);
+
+  useEffect(() => {
     if (session?.currentStep) {
-      setLocalStep(session.currentStep);
-    } else {
-      setLocalStep(null);
+      setLocalStep((current) => current ?? getEffectiveCurrentStep(session.stepStatuses, session.currentStep));
     }
-  }, [session?.currentStep]);
+  }, [session?.currentStep, session?.stepStatuses]);
+
+  useEffect(() => {
+    if (config && session?.stepStatuses) {
+      setLocalStepStatuses((current) =>
+        current ?? normalizeStepStatuses(config, session.stepStatuses, session.currentStep)
+      );
+    }
+  }, [config, session?.currentStep, session?.stepStatuses]);
 
   if (!config) {
     return (
@@ -684,33 +880,52 @@ export function SetupWizard({
     );
   }
 
-  const currentStep = localStep ?? session?.currentStep ?? 0;
+  const sessionCurrentStep = session
+    ? getEffectiveCurrentStep(session.stepStatuses, session.currentStep)
+    : 0;
+  const currentStep = localStep ?? sessionCurrentStep;
   const currentStepConfig = currentStep > 0 ? config.steps[currentStep - 1] : null;
+  const stepStatuses =
+    localStepStatuses ??
+    normalizeStepStatuses(config, session?.stepStatuses, currentStep);
   const activeSubstepIndex = currentStepConfig
     ? localSubsteps[currentStep] ?? getDefaultSubstepIndex(currentStepConfig, session)
     : 0;
-  const currentSubstep = currentStepConfig?.substeps[activeSubstepIndex] ?? null;
-  const completedSteps = session?.stepStatuses.filter((status) => status === "complete").length ?? 0;
+  const visibleSubsteps = useMemo(() => {
+    if (!currentStepConfig) return [];
+    return currentStepConfig.substeps;
+  }, [currentStepConfig]);
+  const currentSubstep = visibleSubsteps[activeSubstepIndex] ?? null;
+  const completedSteps = stepStatuses.filter((status) => status === "complete" || status === "not_needed").length;
   const progressPercent = Math.round((completedSteps / config.totalSteps) * 100);
+  const showCheckpointTabs =
+    currentStepConfig?.stepNumber === 1 ||
+    (currentStepConfig?.stepNumber === 2 && stepOneDraft.isEntityApplication !== false);
 
-  const canProceed = useMemo(() => {
-    if (!currentStepConfig) return false;
-    if (currentStepConfig.stepNumber !== 1) return true;
-    if (activeSubstepIndex === 0) {
-      return stepOneDraft.isEntityApplication !== null;
-    }
-    if (activeSubstepIndex === 1 && stepOneDraft.isEntityApplication === false) {
-      return Boolean(stepOneDraft.legalFirstName.trim() && stepOneDraft.legalLastName.trim());
-    }
-    return true;
-  }, [activeSubstepIndex, currentStepConfig, stepOneDraft]);
-
-  const updateSubstep = (stepNumber: number, substepIndex: number) => {
+  const updateSubstep = async (stepNumber: number, substepIndex: number) => {
     setLocalSubsteps((current) => ({
       ...current,
       [stepNumber]: substepIndex
     }));
+
+    try {
+      await persistCurrentStep(stepNumber, stepStatuses);
+    } catch (cause) {
+      console.error("Failed to save substep progress", cause);
+    }
   };
+
+  const applyLocalProgress = (targetStep: number, nextStatuses: string[]) => {
+    setLocalStep(targetStep);
+    setLocalStepStatuses(nextStatuses);
+  };
+
+  useEffect(() => {
+    if (!currentStepConfig || visibleSubsteps.length === 0) return;
+    if (activeSubstepIndex >= visibleSubsteps.length) {
+      updateSubstep(currentStepConfig.stepNumber, Math.max(visibleSubsteps.length - 1, 0));
+    }
+  }, [activeSubstepIndex, currentStepConfig, visibleSubsteps.length]);
 
   const persistCurrentStep = async (targetStep: number, nextStatuses: string[], isCompleted?: boolean) => {
     await saveSetupStep({
@@ -722,6 +937,11 @@ export function SetupWizard({
       legalMiddleName: stepOneDraft.legalMiddleName.trim() || undefined,
       legalLastName: stepOneDraft.legalLastName.trim() || undefined,
       legalSuffix: stepOneDraft.legalSuffix.trim() || undefined,
+      needsDba: stepTwoDraft.needsDba ?? undefined,
+      dbaName: stepTwoDraft.dbaName.trim() || undefined,
+      dbaCounty: stepTwoDraft.dbaCounty.trim() || undefined,
+      dbaNewspaperName: stepTwoDraft.dbaNewspaperName.trim() || undefined,
+      dbaPublicationFiled: stepTwoDraft.dbaPublicationFiled,
       isCompleted
     });
     setLocalStep(targetStep);
@@ -730,29 +950,36 @@ export function SetupWizard({
   const handleStart = async () => {
     setSaving(true);
     setError(null);
+    await updateSubstep(1, 0);
+    setLocalStep(1);
+
     try {
       await startSetup({ businessType });
-      updateSubstep(1, 0);
-      setLocalStep(1);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Failed to start setup");
+      console.error("Failed to persist setup start", cause);
+      setError("Setup opened, but progress could not save yet. Check that Convex is running, then keep going or try again.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleNavigate = async (stepNumber: number) => {
-    if (!session || !config.steps[stepNumber - 1]) return;
+    if (!config.steps[stepNumber - 1]) return;
+    const targetStatus = stepStatuses[stepNumber - 1] ?? "not_started";
+    const canOpenStep = stepNumber <= currentStep || targetStatus === "complete" || targetStatus === "not_needed";
+    if (!canOpenStep) return;
+
     setSaving(true);
     setError(null);
 
     try {
-      const nextStatuses = [...session.stepStatuses];
+      const nextStatuses = [...stepStatuses];
       if (nextStatuses[stepNumber - 1] === "not_started") {
         nextStatuses[stepNumber - 1] = "in_progress";
       }
+      applyLocalProgress(stepNumber, nextStatuses);
+      await updateSubstep(stepNumber, getDefaultSubstepIndex(config.steps[stepNumber - 1], session));
       await persistCurrentStep(stepNumber, nextStatuses);
-      updateSubstep(stepNumber, getDefaultSubstepIndex(config.steps[stepNumber - 1], session));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Failed to change steps");
     } finally {
@@ -764,11 +991,11 @@ export function SetupWizard({
     if (!currentStepConfig) return;
 
     if (activeSubstepIndex > 0) {
-      updateSubstep(currentStepConfig.stepNumber, activeSubstepIndex - 1);
+      await updateSubstep(currentStepConfig.stepNumber, activeSubstepIndex - 1);
       return;
     }
 
-    if (!session || currentStep <= 1) return;
+    if (currentStep <= 1) return;
 
     const previousStep = currentStep - 1;
     const previousConfig = config.steps[previousStep - 1];
@@ -776,8 +1003,9 @@ export function SetupWizard({
     setError(null);
 
     try {
-      await persistCurrentStep(previousStep, [...session.stepStatuses]);
-      updateSubstep(previousStep, Math.max(previousConfig.substeps.length - 1, 0));
+      applyLocalProgress(previousStep, [...stepStatuses]);
+      await updateSubstep(previousStep, Math.max(previousConfig.substeps.length - 1, 0));
+      await persistCurrentStep(previousStep, [...stepStatuses]);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Failed to go back");
     } finally {
@@ -786,15 +1014,98 @@ export function SetupWizard({
   };
 
   const handleNext = async () => {
-    if (!currentStepConfig || !session) return;
+    if (!currentStepConfig) return;
 
-    if (activeSubstepIndex < currentStepConfig.substeps.length - 1) {
-      if (currentStepConfig.stepNumber === 1 && activeSubstepIndex === 0 && stepOneDraft.isEntityApplication === true) {
-        updateSubstep(currentStepConfig.stepNumber, 1);
+    if (currentStepConfig.stepNumber === 1 && activeSubstepIndex === 0) {
+      if (stepOneDraft.isEntityApplication === null) {
+        setError("Choose whether you are applying as yourself or as an entity before moving on.");
         return;
       }
 
-      updateSubstep(currentStepConfig.stepNumber, activeSubstepIndex + 1);
+      setSaving(true);
+      setError(null);
+
+      try {
+        const nextStatuses = [...stepStatuses];
+        nextStatuses[0] = "in_progress";
+        applyLocalProgress(1, nextStatuses);
+        await updateSubstep(1, 1);
+        await persistCurrentStep(1, nextStatuses);
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Failed to save applicant choice");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
+    if (currentStepConfig.stepNumber === 1 && activeSubstepIndex === 1) {
+      if (!stepOneDraft.legalFirstName.trim() || !stepOneDraft.legalLastName.trim()) {
+        setError("First name and last name are required before you finish step 1.");
+        return;
+      }
+    }
+
+    if (currentStepConfig.stepNumber === 2 && stepOneDraft.isEntityApplication === false) {
+      setSaving(true);
+      setError(null);
+
+      try {
+        const nextStatuses = [...stepStatuses];
+        nextStatuses[1] = "not_needed";
+        const nextStep = 3;
+        if (nextStatuses[nextStep - 1] !== "complete") {
+          nextStatuses[nextStep - 1] = "in_progress";
+        }
+        applyLocalProgress(nextStep, nextStatuses);
+        await updateSubstep(nextStep, 0);
+        await persistCurrentStep(nextStep, nextStatuses);
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Failed to skip step");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
+    if (currentStepConfig.stepNumber === 2 && activeSubstepIndex === 0) {
+      if (stepTwoDraft.needsDba === null) {
+        setError("Choose whether you need a DBA or FBN filing before continuing.");
+        return;
+      }
+
+      if (stepTwoDraft.needsDba === false) {
+        setSaving(true);
+        setError(null);
+
+        try {
+          const nextStatuses = [...stepStatuses];
+          nextStatuses[1] = "not_needed";
+          const nextStep = 3;
+          if (nextStatuses[nextStep - 1] !== "complete") {
+            nextStatuses[nextStep - 1] = "in_progress";
+          }
+          applyLocalProgress(nextStep, nextStatuses);
+          await updateSubstep(nextStep, 0);
+          await persistCurrentStep(nextStep, nextStatuses);
+        } catch (cause) {
+          setError(cause instanceof Error ? cause.message : "Failed to skip step");
+        } finally {
+          setSaving(false);
+        }
+        return;
+      }
+    }
+
+    if (currentStepConfig.stepNumber === 2 && activeSubstepIndex === 1) {
+      if (!stepTwoDraft.dbaName.trim() || !stepTwoDraft.dbaCounty.trim()) {
+        setError("Add the DBA name and filing county before continuing.");
+        return;
+      }
+    }
+
+    if (activeSubstepIndex < visibleSubsteps.length - 1) {
+      await updateSubstep(currentStepConfig.stepNumber, activeSubstepIndex + 1);
       return;
     }
 
@@ -802,7 +1113,7 @@ export function SetupWizard({
     setError(null);
 
     try {
-      const nextStatuses = [...session.stepStatuses];
+      const nextStatuses = [...stepStatuses];
       nextStatuses[currentStepConfig.stepNumber - 1] = "complete";
 
       if (currentStepConfig.stepNumber < config.totalSteps) {
@@ -811,8 +1122,9 @@ export function SetupWizard({
         }
 
         const nextStep = currentStepConfig.stepNumber + 1;
+        applyLocalProgress(nextStep, nextStatuses);
+        await updateSubstep(nextStep, 0);
         await persistCurrentStep(nextStep, nextStatuses);
-        updateSubstep(nextStep, 0);
       } else {
         await persistCurrentStep(currentStepConfig.stepNumber, nextStatuses, true);
       }
@@ -824,7 +1136,7 @@ export function SetupWizard({
   };
 
   const renderMainStage = () => {
-    if (!session || !currentStepConfig) {
+    if (!currentStepConfig) {
       return (
         <SetupKickoff
           config={config}
@@ -845,7 +1157,7 @@ export function SetupWizard({
             <div className="max-w-[760px]">
               <div className={tw.kicker}>
                 Step {currentStepConfig.stepNumber} of {config.totalSteps}
-                {currentSubstep ? ` · ${activeSubstepIndex + 1}.${currentStepConfig.substeps.length}` : ""}
+                {showCheckpointTabs && currentSubstep ? ` · ${currentStepConfig.stepNumber}.${activeSubstepIndex + 1}` : ""}
               </div>
               <h1 className="mt-2.5 font-sans text-[clamp(2.2rem,4vw,3.4rem)] leading-[0.95] tracking-[-0.05em]">{currentStepConfig.title}</h1>
               <p className="mt-[14px] max-w-[760px] text-[1.05rem] leading-[1.7] text-[var(--muted)]">{currentStepConfig.description}</p>
@@ -856,23 +1168,25 @@ export function SetupWizard({
             </div>
           </div>
 
-          <div className="grid gap-2.5 md:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]" role="tablist" aria-label="Current step checkpoints">
-            {currentStepConfig.substeps.map((substep, index) => (
-              <button
-                key={substep.key}
-                type="button"
-                className={`grid gap-1 rounded-[18px] border px-4 py-[14px] text-left ${
-                  index === activeSubstepIndex
-                    ? "border-[color-mix(in_srgb,var(--accent)_42%,var(--border))] bg-[color-mix(in_srgb,var(--accent)_14%,var(--panel))]"
-                    : "border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_72%,transparent)]"
-                }`}
-                onClick={() => updateSubstep(currentStepConfig.stepNumber, index)}
-              >
-                <span className="text-[0.78rem] font-bold tracking-[0.12em] text-[var(--muted)]">{currentStepConfig.stepNumber}.{index + 1}</span>
-                <strong className="text-[0.95rem]">{substep.label}</strong>
-              </button>
-            ))}
-          </div>
+          {showCheckpointTabs ? (
+            <div className="grid gap-2.5 md:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]" role="tablist" aria-label="Current step checkpoints">
+              {visibleSubsteps.map((substep, index) => (
+                <button
+                  key={substep.key}
+                  type="button"
+                  className={`grid gap-1 rounded-[18px] border px-4 py-[14px] text-left ${
+                    index === activeSubstepIndex
+                      ? "border-[color-mix(in_srgb,var(--accent)_42%,var(--border))] bg-[color-mix(in_srgb,var(--accent)_14%,var(--panel))]"
+                      : "border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_72%,transparent)]"
+                  }`}
+                  onClick={() => updateSubstep(currentStepConfig.stepNumber, index)}
+                >
+                  <span className="text-[0.78rem] font-bold tracking-[0.12em] text-[var(--muted)]">{currentStepConfig.stepNumber}.{index + 1}</span>
+                  <strong className="text-[0.95rem]">{substep.label}</strong>
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           <div className={tw.setupContentGrid}>
             <div className={tw.setupPrimaryPanel}>
@@ -883,9 +1197,20 @@ export function SetupWizard({
                 <StepOneContent
                   substepIndex={activeSubstepIndex}
                   draft={stepOneDraft}
-                  saving={saving}
                   onDraftChange={(patch) =>
                     setStepOneDraft((current) => ({
+                      ...current,
+                      ...patch
+                    }))
+                  }
+                />
+              ) : currentStepConfig.stepNumber === 2 ? (
+                <StepTwoContent
+                  substepIndex={activeSubstepIndex}
+                  isEntityApplication={stepOneDraft.isEntityApplication}
+                  draft={stepTwoDraft}
+                  onDraftChange={(patch) =>
+                    setStepTwoDraft((current) => ({
                       ...current,
                       ...patch
                     }))
@@ -895,37 +1220,13 @@ export function SetupWizard({
                 <GenericStepContent step={currentStepConfig} substepIndex={activeSubstepIndex} />
               )}
             </div>
-
-            <div className={tw.setupSupportPanel}>
-              <article className={`${tw.surfaceInset} ${tw.stack}`}>
-                <div className={tw.kicker}>Current checkpoint</div>
-                <strong>{currentSubstep?.label ?? "Checkpoint"}</strong>
-                <p className={tw.muted}>{currentSubstep?.detail ?? currentStepConfig.description}</p>
-              </article>
-              <article className={`${tw.surfaceInset} ${tw.stack}`}>
-                <div className={tw.kicker}>What to prepare</div>
-                <ul className={tw.setupBulletListSimple}>
-                  {getStepPreparation(currentStepConfig).map((item) => (
-                    <li key={item} className="relative pl-[18px] leading-[1.6] text-[var(--muted)] before:absolute before:left-0 before:top-[0.65rem] before:h-[7px] before:w-[7px] before:rounded-full before:bg-[var(--accent)]">{item}</li>
-                  ))}
-                </ul>
-              </article>
-              <article className={`${tw.surfaceInset} ${tw.stack}`}>
-                <div className={tw.kicker}>What comes next</div>
-                <ul className={tw.setupBulletListSimple}>
-                  {getStepOutputs(currentStepConfig).map((item) => (
-                    <li key={item} className="relative pl-[18px] leading-[1.6] text-[var(--muted)] before:absolute before:left-0 before:top-[0.65rem] before:h-[7px] before:w-[7px] before:rounded-full before:bg-[var(--accent)]">{item}</li>
-                  ))}
-                </ul>
-              </article>
-            </div>
           </div>
 
           <div className={tw.setupActionBar}>
             <button
               type="button"
               className={tw.setupButtonSecondary}
-              disabled={saving || (currentStepConfig.stepNumber === 1 && activeSubstepIndex === 0)}
+              disabled={currentStepConfig.stepNumber === 1 && activeSubstepIndex === 0}
               onClick={handleBack}
             >
               Back
@@ -935,9 +1236,11 @@ export function SetupWizard({
                 {currentSubstep?.label ?? currentStepConfig.title}
               </strong>
               <span className={tw.muted}>
-                {isFinalStep && activeSubstepIndex === currentStepConfig.substeps.length - 1
+                {isFinalStep
                   ? "Finish the full setup track."
-                  : activeSubstepIndex === currentStepConfig.substeps.length - 1
+                  : currentStepConfig.stepNumber === 2 && stepOneDraft.isEntityApplication === false
+                    ? "This step is skipped for the individual path."
+                    : activeSubstepIndex === visibleSubsteps.length - 1
                     ? "Mark this step complete and move forward."
                     : "Move to the next checkpoint inside this step."}
               </span>
@@ -945,12 +1248,15 @@ export function SetupWizard({
             <button
               type="button"
               className={tw.setupButtonPrimary}
-              disabled={saving || !canProceed}
               onClick={handleNext}
             >
-              {isFinalStep && activeSubstepIndex === currentStepConfig.substeps.length - 1
+              {isFinalStep
                 ? "Complete setup"
-                : activeSubstepIndex === currentStepConfig.substeps.length - 1
+                : currentStepConfig.stepNumber === 2 && stepOneDraft.isEntityApplication === false
+                  ? "Continue to Step 3"
+                  : currentStepConfig.stepNumber === 1 && activeSubstepIndex === 0
+                    ? "Next"
+                    : activeSubstepIndex === visibleSubsteps.length - 1
                   ? "Finish step"
                   : "Next checkpoint"}
             </button>
@@ -961,6 +1267,7 @@ export function SetupWizard({
           config={config}
           session={session}
           currentStep={currentStep}
+          stepStatuses={stepStatuses}
           activeSubstepIndex={activeSubstepIndex}
           onNavigate={handleNavigate}
         />
@@ -974,6 +1281,7 @@ export function SetupWizard({
       description="Follow the steps to set up your business."
       initialUser={initialUser}
       showHeader={false}
+      showTopProgress={false}
     >
       <div className={tw.setupPageSpacing}>{renderMainStage()}</div>
     </DashboardLayout>

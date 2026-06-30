@@ -51,6 +51,34 @@ function getSetupConfig(businessType: string): SetupConfig | null {
   return null;
 }
 
+function normalizeStepStatuses(statuses: string[], currentStep: number, totalSteps = statuses.length, minimumStep = 0) {
+  const safeStatuses = Array.from({ length: totalSteps }, (_step, index) => statuses[index] ?? "not_started");
+  const latestInProgressIndex = safeStatuses.reduce(
+    (latest, status, index) => (status === "in_progress" ? index : latest),
+    -1
+  );
+  const boundedMinimumStep = Math.min(Math.max(minimumStep, 0), totalSteps);
+  const effectiveCurrentStep = Math.min(
+    Math.max(currentStep, latestInProgressIndex + 1, boundedMinimumStep),
+    totalSteps
+  );
+  const normalized = safeStatuses.map((status, index) => {
+    const stepNumber = index + 1;
+    if (stepNumber < effectiveCurrentStep && status !== "not_needed") return "complete";
+    if (stepNumber === effectiveCurrentStep && status === "not_started") return "in_progress";
+    return status;
+  });
+
+  return {
+    currentStep: effectiveCurrentStep,
+    stepStatuses: normalized
+  };
+}
+
+function stepStatusesChanged(left: string[], right: string[]) {
+  return left.length !== right.length || left.some((status, index) => status !== right[index]);
+}
+
 const query = queryGeneric;
 const mutation = mutationGeneric;
 
@@ -72,6 +100,11 @@ type SetupSessionDoc = {
   legalMiddleName?: string;
   legalLastName?: string;
   legalSuffix?: string;
+  needsDba?: boolean;
+  dbaName?: string;
+  dbaCounty?: string;
+  dbaNewspaperName?: string;
+  dbaPublicationFiled?: boolean;
   isCompleted: boolean;
   startedAt?: number;
   completedAt?: number;
@@ -100,7 +133,19 @@ export const getSetupSession = query({
       )
       .unique();
 
-    return (session as SetupSessionDoc) ?? null;
+    if (!session) return null;
+
+    const config = getSetupConfig(args.businessType);
+    const normalized = normalizeStepStatuses(
+      session.stepStatuses,
+      session.currentStep,
+      config?.totalSteps ?? session.stepStatuses.length,
+      1
+    );
+    return {
+      ...(session as SetupSessionDoc),
+      ...normalized
+    };
   }
 });
 
@@ -129,16 +174,19 @@ export const getSetupOverview = query({
     const sessions = await ctx.db
       .query("setupSessions")
       .withIndex("by_workspace", (q: any) => q.eq("workspaceId", workspace._id))
-      .collect();
+      .take(50);
 
     const summaries = sessions
       .map((session) => {
         const config = getSetupConfig(session.businessType);
         const totalSteps = config?.totalSteps ?? session.stepStatuses.length;
-        const completedSteps = session.stepStatuses.filter((status: string) => status === "complete").length;
+        const normalized = normalizeStepStatuses(session.stepStatuses, session.currentStep, totalSteps, 1);
+        const completedSteps = normalized.stepStatuses.filter(
+          (status: string) => status === "complete" || status === "not_needed"
+        ).length;
         return {
           businessType: session.businessType,
-          currentStep: session.currentStep,
+          currentStep: normalized.currentStep,
           totalSteps,
           completedSteps,
           updatedAt: session.updatedAt,
@@ -179,6 +227,17 @@ export const startSetup = mutation({
       .unique();
 
     if (existing) {
+      const normalized = normalizeStepStatuses(existing.stepStatuses, existing.currentStep, config.totalSteps, 1);
+      if (
+        existing.currentStep !== normalized.currentStep ||
+        stepStatusesChanged(existing.stepStatuses, normalized.stepStatuses)
+      ) {
+        await ctx.db.patch(existing._id, {
+          currentStep: normalized.currentStep,
+          stepStatuses: normalized.stepStatuses,
+          updatedAt: Date.now()
+        });
+      }
       return existing._id;
     }
 
@@ -212,6 +271,11 @@ export const saveSetupStep = mutation({
     legalMiddleName: v.optional(v.string()),
     legalLastName: v.optional(v.string()),
     legalSuffix: v.optional(v.string()),
+    needsDba: v.optional(v.boolean()),
+    dbaName: v.optional(v.string()),
+    dbaCounty: v.optional(v.string()),
+    dbaNewspaperName: v.optional(v.string()),
+    dbaPublicationFiled: v.optional(v.boolean()),
     isCompleted: v.optional(v.boolean())
   },
   handler: async (ctx, args) => {
@@ -231,12 +295,17 @@ export const saveSetupStep = mutation({
       )
       .unique();
 
-    if (!session) throw new Error("Setup session not found. Start the setup first.");
-
     const now = Date.now();
+    const config = getSetupConfig(args.businessType);
+    const normalized = normalizeStepStatuses(
+      args.stepStatuses,
+      args.currentStep,
+      config?.totalSteps ?? args.stepStatuses.length,
+      1
+    );
     const patch: Record<string, any> = {
-      currentStep: args.currentStep,
-      stepStatuses: args.stepStatuses,
+      currentStep: normalized.currentStep,
+      stepStatuses: normalized.stepStatuses,
       updatedAt: now
     };
 
@@ -255,9 +324,38 @@ export const saveSetupStep = mutation({
     if (args.legalSuffix !== undefined) {
       patch.legalSuffix = args.legalSuffix;
     }
+    if (args.needsDba !== undefined) {
+      patch.needsDba = args.needsDba;
+    }
+    if (args.dbaName !== undefined) {
+      patch.dbaName = args.dbaName;
+    }
+    if (args.dbaCounty !== undefined) {
+      patch.dbaCounty = args.dbaCounty;
+    }
+    if (args.dbaNewspaperName !== undefined) {
+      patch.dbaNewspaperName = args.dbaNewspaperName;
+    }
+    if (args.dbaPublicationFiled !== undefined) {
+      patch.dbaPublicationFiled = args.dbaPublicationFiled;
+    }
     if (args.isCompleted) {
       patch.isCompleted = true;
       patch.completedAt = now;
+    }
+
+    if (!session) {
+      await ctx.db.insert("setupSessions", {
+        workspaceId: workspace._id,
+        businessType: args.businessType,
+        currentStep: normalized.currentStep,
+        stepStatuses: normalized.stepStatuses,
+        isCompleted: args.isCompleted === true,
+        startedAt: now,
+        createdAt: now,
+        ...patch
+      });
+      return true;
     }
 
     await ctx.db.patch(session._id, patch);

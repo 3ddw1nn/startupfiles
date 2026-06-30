@@ -12,6 +12,11 @@ type SetupSessionDoc = {
   legalMiddleName?: string;
   legalLastName?: string;
   legalSuffix?: string;
+  needsDba?: boolean;
+  dbaName?: string;
+  dbaCounty?: string;
+  dbaNewspaperName?: string;
+  dbaPublicationFiled?: boolean;
   isCompleted: boolean;
   startedAt?: number;
   completedAt?: number;
@@ -58,6 +63,11 @@ export const convexApi = {
       legalMiddleName?: string;
       legalLastName?: string;
       legalSuffix?: string;
+      needsDba?: boolean;
+      dbaName?: string;
+      dbaCounty?: string;
+      dbaNewspaperName?: string;
+      dbaPublicationFiled?: boolean;
       isCompleted?: boolean;
     },
     boolean
